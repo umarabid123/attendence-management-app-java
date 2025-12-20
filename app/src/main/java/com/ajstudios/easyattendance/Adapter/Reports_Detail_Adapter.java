@@ -1,59 +1,70 @@
 package com.ajstudios.easyattendance.Adapter;
 
-import android.app.Activity;
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-
+import android.widget.TextView;
 import androidx.annotation.NonNull;
-
-import com.ajstudios.easyattendance.R;
-import com.ajstudios.easyattendance.realm.Attendance_Students_List;
-import com.ajstudios.easyattendance.viewholders.ViewHolder_reports_detail;
-
-import io.realm.Realm;
-import io.realm.RealmResults;
+import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
-public class Reports_Detail_Adapter extends RecyclerView.Adapter<ViewHolder_reports_detail> {
+import com.ajstudios.easyattendance.R;
+import com.ajstudios.easyattendance.model.AttendanceItem;
+import java.util.List;
 
-    private final Activity mActivity;
-    RealmResults<Attendance_Students_List> mList;
-    String stuID, mroomID;
-    Realm realm = Realm.getDefaultInstance();
+public class Reports_Detail_Adapter extends RecyclerView.Adapter<Reports_Detail_Adapter.ViewHolder> {
 
-    public Reports_Detail_Adapter(RealmResults<Attendance_Students_List> list, Activity context, String roomID) {
-        mActivity = context;
-        mList = list;
-        mroomID =roomID;
+    private Context context;
+    private List<AttendanceItem> list;
+
+    public Reports_Detail_Adapter(Context context, List<AttendanceItem> list) {
+        this.context = context;
+        this.list = list;
+    }
+    
+    public void updateList(List<AttendanceItem> list) {
+        this.list = list;
+        notifyDataSetChanged();
     }
 
     @NonNull
     @Override
-    public ViewHolder_reports_detail onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.report_detail_adapter_item, parent, false);
-        return new ViewHolder_reports_detail(itemView, mActivity, mList);
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View itemView = LayoutInflater.from(context).inflate(R.layout.report_detail_adapter_item, parent, false);
+        return new ViewHolder(itemView);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder_reports_detail holder, int position) {
-        Attendance_Students_List temp = mList.get(position);
-        holder.namE.setText(temp.getStudentName());
-        holder.regNo.setText(temp.getStudentRegNo());
-        if (temp.getAttendance().equals("Present")){
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        AttendanceItem item = list.get(position);
+        holder.namE.setText(item.getStudentName());
+        holder.regNo.setText(item.getRegNo());
+        
+        if ("Present".equalsIgnoreCase(item.getStatus())) {
             holder.status.setText("P");
-            holder.circle.setCardBackgroundColor(mActivity.getResources().getColor(R.color.green_new));
-        }else{
+            holder.circle.setCardBackgroundColor(context.getResources().getColor(R.color.green_new));
+        } else {
             holder.status.setText("A");
-            holder.circle.setCardBackgroundColor(mActivity.getResources().getColor(R.color.red_new));
+            holder.circle.setCardBackgroundColor(context.getResources().getColor(R.color.red_new));
         }
     }
 
-
     @Override
     public int getItemCount() {
-        return mList != null ? mList.size() : 0;
+        return list != null ? list.size() : 0;
     }
+    
+    public static class ViewHolder extends RecyclerView.ViewHolder {
+        TextView namE, regNo, status;
+        CardView circle;
 
-
+        public ViewHolder(@NonNull View itemView) {
+            super(itemView);
+            namE = itemView.findViewById(R.id.student_name_report_detail_adapter);
+            regNo = itemView.findViewById(R.id.student_regNo_report_detail_adapter);
+            status = itemView.findViewById(R.id.status_report_detail_adapter);
+            circle = itemView.findViewById(R.id.cardView_report_detail_adapter);
+        }
+    }
 }

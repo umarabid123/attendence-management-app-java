@@ -9,63 +9,85 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.ajstudios.easyattendance.Adapter.Reports_Detail_Adapter;
-import com.ajstudios.easyattendance.realm.Attendance_Students_List;
+import com.ajstudios.easyattendance.model.AttendanceItem;
+import com.ajstudios.easyattendance.model.AttendanceReport;
+import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
-
-import io.realm.Realm;
-import io.realm.RealmResults;
-import io.realm.Sort;
 
 public class Reports_Detail_Activity extends AppCompatActivity {
 
     RecyclerView recyclerView;
     Reports_Detail_Adapter mAdapter;
+    List<AttendanceItem> attendanceList = new ArrayList<>();
 
     TextView subj, className, toolbar_title;
+    FirebaseFirestore db;
+    String reportId, room_ID;
 
-    Realm realm;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_reports__detail);
-        Realm.init(this);
-        realm = Realm.getDefaultInstance();
+        
+        db = FirebaseFirestore.getInstance();
 
-        String room_ID = getIntent().getStringExtra("ID");
-        String classname = getIntent().getStringExtra("class");
-        String subjName = getIntent().getStringExtra("subject");
-        String date = getIntent().getStringExtra("date");
+        reportId = getIntent().getStringExtra("REPORT_ID");
+        room_ID = getIntent().getStringExtra("room_ID");
+        String classnameStr = getIntent().getStringExtra("class");
+        String subjNameStr = getIntent().getStringExtra("subject");
+        String dateStr = getIntent().getStringExtra("date");
 
         Toolbar toolbar = findViewById(R.id.toolbar_reports_detail);
         setSupportActionBar(toolbar);
-        Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
 
         recyclerView = findViewById(R.id.recyclerView_reports_detail);
         subj = findViewById(R.id.subjName_report_detail);
         className = findViewById(R.id.classname_report_detail);
         toolbar_title = findViewById(R.id.toolbar_title);
-        toolbar_title.setText(date);
-        subj.setText(subjName);
-        className.setText(classname);
-
-
-
-        RealmResults<Attendance_Students_List> list = realm.where(Attendance_Students_List.class)
-                            .equalTo("date_and_classID", room_ID)
-                            .sort("studentName", Sort.ASCENDING)
-                            .findAllAsync();
-
+        
+        toolbar_title.setText(dateStr);
+        subj.setText(subjNameStr);
+        className.setText(classnameStr);
 
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        mAdapter = new Reports_Detail_Adapter( list,Reports_Detail_Activity.this, room_ID);
+        mAdapter = new Reports_Detail_Adapter(this, attendanceList);
         recyclerView.setAdapter(mAdapter);
-
+        
+        fetchReportDetails();
     }
+
+    private void fetchReportDetails() {
+        if (room_ID == null || reportId == null) return;
+        
+        db.collection("classes").document(room_ID).collection("attendance_reports").document(reportId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        AttendanceReport report = documentSnapshot.toObject(AttendanceReport.class);
+                        if (report != null && report.getAttendanceList() != null) {
+                            attendanceList.clear();
+                            // Sort by name if desired
+                            attendanceList.addAll(report.getAttendanceList());
+                            mAdapter.updateList(attendanceList);
+                        }
+                    } else {
+                        Toast.makeText(this, "Report not found", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e -> Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.only_dot, menu);
