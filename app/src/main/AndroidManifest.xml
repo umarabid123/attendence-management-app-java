@@ -22,14 +22,18 @@
         <activity
             android:name="com.ajstudios.easyattendance.Insert_class_Activity"
             android:theme="@style/AppTheme2" />
-        <activity android:name="com.ajstudios.easyattendance.MainActivity"
+        <activity android:name="com.ajstudios.easyattendance.MainActivity" />
+        <activity android:name="com.ajstudios.easyattendance.LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name="com.ajstudios.easyattendance.RegisterActivity" />
+        <activity android:name="com.ajstudios.easyattendance.StudentDashboardActivity" />
+        <activity android:name="com.ajstudios.easyattendance.SuperAdminActivity"
+            android:theme="@style/AppTheme2" />
     </application>
 
 </manifest>
