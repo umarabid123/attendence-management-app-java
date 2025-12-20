@@ -42,8 +42,8 @@ public class ClassListAdapter extends RecyclerView.Adapter<ViewHolder> {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         
         // Fetch student count asynchronously
-        db.collection("Students")
-                .whereEqualTo("class_id", temp.getId())
+        // Fetch student count asynchronously
+        db.collection("classes").document(temp.getId()).collection("students")
                 .get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override

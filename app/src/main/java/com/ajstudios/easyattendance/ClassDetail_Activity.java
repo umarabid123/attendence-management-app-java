@@ -206,7 +206,7 @@ public class ClassDetail_Activity extends AppCompatActivity {
                         Toast.makeText(ClassDetail_Activity.this, "Listen failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                         return;
                     }
-
+                    
                     studentList.clear();
                     if (snapshots != null) {
                         for (QueryDocumentSnapshot doc : snapshots) {
@@ -215,11 +215,12 @@ public class ClassDetail_Activity extends AppCompatActivity {
                             studentList.add(s);
                         }
                     }
-                    
+
                     // Sort by Name
                     Collections.sort(studentList, new Comparator<Student>() {
                         @Override
                         public int compare(Student o1, Student o2) {
+                            if (o1.getName() == null || o2.getName() == null) return 0;
                             return o1.getName().compareToIgnoreCase(o2.getName());
                         }
                     });
@@ -248,23 +249,21 @@ public class ClassDetail_Activity extends AppCompatActivity {
                         submit_btn.setVisibility(View.GONE);
                     } else {
                         layout_attendance_taken.setVisibility(View.GONE);
+                         // Only show submit button if there are students
                         if (!studentList.isEmpty()) {
                             submit_btn.setVisibility(View.VISIBLE);
                         }
                     }
                 })
                 .addOnFailureListener(e -> {
-                     // Fail silently or show error
-                     // Assume no attendance taken if check fails? Better probably to keep button hidden to avoid dupes? 
-                     // Or just show it.
+                     // On failure, maybe just show button if students exist to be safe
                      if (!studentList.isEmpty()) submit_btn.setVisibility(View.VISIBLE);
                 });
     }
 
     public void addStudentMethod(final String studentName, final String regNo, final String mobileNo) {
-        final ProgressDialog progressDialog = new ProgressDialog(ClassDetail_Activity.this);
-        progressDialog.setMessage("Adding Student..");
-        progressDialog.show();
+        // Optimistic update: Don't block user | ProgressDialog removed
+        Toast.makeText(ClassDetail_Activity.this, "Adding Student...", Toast.LENGTH_SHORT).show();
 
         Student student = new Student(studentName, regNo, mobileNo, room_ID);
 
@@ -273,14 +272,12 @@ public class ClassDetail_Activity extends AppCompatActivity {
                 .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
                     @Override
                     public void onSuccess(DocumentReference documentReference) {
-                        progressDialog.dismiss();
                         Toast.makeText(ClassDetail_Activity.this, "Student Added", Toast.LENGTH_SHORT).show();
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        progressDialog.dismiss();
                         Toast.makeText(ClassDetail_Activity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });

@@ -77,10 +77,11 @@ public class Insert_class_Activity extends AppCompatActivity {
                 if (isValid()) {
 
                     final ProgressDialog progressDialog = new ProgressDialog(Insert_class_Activity.this);
-                    progressDialog.setMessage("Creating class..");
+                    progressDialog.setMessage("Creating class...");
                     progressDialog.show();
 
-                    String id = _className.getText().toString() + _subjectName.getText().toString();
+                    // Use auto-generated ID to prevent invalid path characters
+                    String id = db.collection("classes").document().getId();
                     ClassItem classItem = new ClassItem(id, _className.getText().toString(), _subjectName.getText().toString(), position_bg);
 
                     db.collection("classes").document(id).set(classItem)
@@ -96,11 +97,11 @@ public class Insert_class_Activity extends AppCompatActivity {
                                 @Override
                                 public void onFailure(@NonNull Exception e) {
                                     progressDialog.dismiss();
-                                    Toast.makeText(Insert_class_Activity.this, "Error!", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(Insert_class_Activity.this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
                                 }
                             });
 
-                }else{
+                } else {
                     Toast.makeText(Insert_class_Activity.this, "Fill all details", Toast.LENGTH_SHORT).show();
                 }
 
