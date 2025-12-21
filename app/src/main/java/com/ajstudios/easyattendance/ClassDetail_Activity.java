@@ -47,6 +47,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -262,17 +263,33 @@ public class ClassDetail_Activity extends AppCompatActivity {
     }
 
     public void addStudentMethod(final String studentName, final String regNo, final String mobileNo) {
-        // Optimistic update: Don't block user | ProgressDialog removed
         Toast.makeText(ClassDetail_Activity.this, "Adding Student...", Toast.LENGTH_SHORT).show();
 
-        Student student = new Student(studentName, regNo, mobileNo, room_ID);
+        // 1. Add to Class Subcollection
+        final Student student = new Student(studentName.trim(), regNo.trim(), mobileNo.trim(), room_ID);
 
         db.collection("classes").document(room_ID).collection("students")
                 .add(student)
                 .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
                     @Override
                     public void onSuccess(DocumentReference documentReference) {
-                        Toast.makeText(ClassDetail_Activity.this, "Student Added", Toast.LENGTH_SHORT).show();
+                        String studentDocId = documentReference.getId();
+                        
+                        // 2. Add to Global 'students' collection for Login
+                        // We include classId (room_ID) so we know which class they belong to.
+                        // We also need to set the ID to match valid referencing if needed, 
+                        // but Login query uses 'whereEqualTo' so ID doesn't matter as much, 
+                        // but let's keep consistency.
+                        
+                        Map<String, Object> globalStudent = new HashMap<>();
+                        globalStudent.put("name", studentName.trim());
+                        globalStudent.put("regNo", regNo.trim());
+                        globalStudent.put("mobileNo", mobileNo.trim());
+                        globalStudent.put("classId", room_ID);
+                        
+                        db.collection("students").document(studentDocId).set(globalStudent)
+                            .addOnSuccessListener(v -> Toast.makeText(ClassDetail_Activity.this, "Student Added & Registered", Toast.LENGTH_SHORT).show())
+                            .addOnFailureListener(e -> Toast.makeText(ClassDetail_Activity.this, "Added to class but Login reg failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {

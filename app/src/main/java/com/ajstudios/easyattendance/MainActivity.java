@@ -59,6 +59,17 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.toolbar_beginner);
+        toolbar.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.action_logout) {
+                com.google.firebase.auth.FirebaseAuth.getInstance().signOut();
+                startActivity(new Intent(MainActivity.this, LoginActivity.class));
+                finish();
+                return true;
+            }
+            return false;
+        });
+
         sample = findViewById(R.id.classes_sample);
         recyclerView = findViewById(R.id.recyclerView_main);
 
