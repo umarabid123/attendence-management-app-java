@@ -158,7 +158,8 @@ public class LoginActivity extends AppCompatActivity {
     // TODO: Replace with the specific Gmail you want to have Super Admin access
     private static final String SUPER_ADMIN_EMAIL = "umarabid709@gmail.com";
 
-    private void loginTeacher(String email, String password) {
+    private void loginTeacher(String emailInput, String password) {
+        String email = emailInput.toLowerCase();
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
@@ -189,7 +190,22 @@ public class LoginActivity extends AppCompatActivity {
                     } else {
                         progressBar.setVisibility(View.GONE);
                         btnLogin.setEnabled(true);
-                        Toast.makeText(LoginActivity.this, "Authentication Failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        
+                        Exception exception = task.getException();
+                        if (exception instanceof com.google.firebase.auth.FirebaseAuthInvalidUserException) {
+                            // User not in Auth. Check if they have a pending invite in Firestore.
+                            db.collection("users").document(email).get().addOnSuccessListener(doc -> {
+                                if (doc.exists()) {
+                                    Toast.makeText(LoginActivity.this, "Account not activated. Please tap 'New Teacher? Activate Account' below.", Toast.LENGTH_LONG).show();
+                                } else {
+                                    Toast.makeText(LoginActivity.this, "Account does not exist.", Toast.LENGTH_SHORT).show();
+                                }
+                            }).addOnFailureListener(e -> {
+                                Toast.makeText(LoginActivity.this, "Authentication Failed.", Toast.LENGTH_SHORT).show();
+                            });
+                        } else {
+                            Toast.makeText(LoginActivity.this, "Authentication Failed: " + exception.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
                     }
                 });
     }

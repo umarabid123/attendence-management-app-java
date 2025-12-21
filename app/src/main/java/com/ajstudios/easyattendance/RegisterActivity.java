@@ -37,7 +37,7 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void handleActivation() {
-        String email = etEmail.getText().toString().trim();
+        String email = etEmail.getText().toString().trim().toLowerCase();
         String password = etPassword.getText().toString().trim();
         String confirm = etConfirmPass.getText().toString().trim();
 

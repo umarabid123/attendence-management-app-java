@@ -93,7 +93,7 @@ public class SuperAdminActivity extends AppCompatActivity {
 
         builder.setPositiveButton("Add", (dialog, id) -> {
             String name = etName.getText().toString().trim();
-            String email = etEmail.getText().toString().trim();
+            String email = etEmail.getText().toString().trim().toLowerCase();
             String phone = etPhone.getText().toString().trim();
 
             if (!name.isEmpty() && !email.isEmpty()) {

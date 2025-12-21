@@ -29,7 +29,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
     private TextView tvWelcome, tvClassInfo, tvPercentage;
     private ProgressBar itemsProgressBar;
     private RecyclerView recyclerSubjects;
-    private Button btnLogout;
+    private android.widget.ImageButton btnLogout;
     private SubjectStatsAdapter adapter;
     private List<SubjectStat> statsList = new ArrayList<>();
 

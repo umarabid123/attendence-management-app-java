@@ -106,12 +106,14 @@
         app:layout_constraintTop_toBottomOf="@id/labelSubjects"
         app:layout_constraintBottom_toBottomOf="parent" />
     
-    <Button
+    <ImageButton
         android:id="@+id/btnLogout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Logout"
-        android:backgroundTint="#FF4444"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@android:drawable/ic_lock_power_off"
+        app:tint="#FFFFFF"
+        android:contentDescription="Logout"
         android:layout_marginEnd="16dp"
         android:layout_marginTop="16dp"
         app:layout_constraintEnd_toEndOf="parent"
