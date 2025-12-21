@@ -134,7 +134,8 @@ public class StudentDashboardActivity extends AppCompatActivity {
                             
                             if (report.getAttendanceList() != null) {
                                 for (AttendanceItem item : report.getAttendanceList()) {
-                                    if (item.getRegNo() != null && item.getRegNo().equals(regNo)) {
+                                    String itemReg = item.getRegNo();
+                                    if (itemReg != null && itemReg.trim().equalsIgnoreCase(regNo.trim())) {
                                         found = true;
                                         present = "Present".equalsIgnoreCase(item.getStatus());
                                         break;

@@ -81,7 +81,11 @@ public class MainActivity extends AppCompatActivity {
         mAdapter = new ClassListAdapter(classList, MainActivity.this);
         recyclerView.setAdapter(mAdapter);
 
-        db.collection("classes").addSnapshotListener(new EventListener<QuerySnapshot>() {
+        String currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getUid();
+        
+        db.collection("classes")
+            .whereEqualTo("ownerId", currentUserId)
+            .addSnapshotListener(new EventListener<QuerySnapshot>() {
             @Override
             public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException error) {
                 if (error != null) {

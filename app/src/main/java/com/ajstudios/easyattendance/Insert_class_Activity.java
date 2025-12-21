@@ -82,7 +82,9 @@ public class Insert_class_Activity extends AppCompatActivity {
 
                     // Use auto-generated ID to prevent invalid path characters
                     String id = db.collection("classes").document().getId();
-                    ClassItem classItem = new ClassItem(id, _className.getText().toString(), _subjectName.getText().toString(), position_bg);
+                    String currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getUid();
+                    
+                    ClassItem classItem = new ClassItem(id, _className.getText().toString(), _subjectName.getText().toString(), position_bg, currentUserId);
 
                     db.collection("classes").document(id).set(classItem)
                             .addOnSuccessListener(new OnSuccessListener<Void>() {

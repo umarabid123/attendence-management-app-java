@@ -1,47 +1,93 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="24dp"
-    android:gravity="center">
+    android:background="@drawable/bg_gradient">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Activate Teacher Account"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="32dp" />
-
-    <EditText
-        android:id="@+id/etRegEmail"
+    <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Email (Pre-authorized)"
-        android:inputType="textEmailAddress"
-        android:layout_marginBottom="16dp" />
+        android:layout_margin="24dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="10dp"
+        app:cardBackgroundColor="@android:color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
-    <EditText
-        android:id="@+id/etRegPassword"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Set Password"
-        android:inputType="textPassword"
-        android:layout_marginBottom="16dp" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="32dp">
 
-    <EditText
-        android:id="@+id/etRegConfirmPass"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Confirm Password"
-        android:inputType="textPassword"
-        android:layout_marginBottom="24dp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Activate Account"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="8dp" />
 
-    <Button
-        android:id="@+id/btnActivate"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Activate Account" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="For pre-approved teachers only"
+                android:textSize="14sp"
+                android:textColor="@color/text_hint"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="32dp" />
 
-</LinearLayout>
+            <EditText
+                android:id="@+id/etRegEmail"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:background="@drawable/bg_input"
+                android:hint="Email Address"
+                android:paddingHorizontal="16dp"
+                android:inputType="textEmailAddress"
+                android:textColor="@color/text_primary"
+                android:layout_marginBottom="16dp" />
+
+            <EditText
+                android:id="@+id/etRegPassword"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:background="@drawable/bg_input"
+                android:hint="Create Password"
+                android:paddingHorizontal="16dp"
+                android:inputType="textPassword"
+                android:textColor="@color/text_primary"
+                android:layout_marginBottom="16dp" />
+
+            <EditText
+                android:id="@+id/etRegConfirmPass"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:background="@drawable/bg_input"
+                android:hint="Confirm Password"
+                android:paddingHorizontal="16dp"
+                android:inputType="textPassword"
+                android:textColor="@color/text_primary"
+                android:layout_marginBottom="24dp" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnActivate"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="Activate Account"
+                android:background="@drawable/bg_button"
+                android:textColor="@android:color/white"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textAllCaps="false"/>
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
