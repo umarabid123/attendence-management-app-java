@@ -34,6 +34,8 @@ public class RegisterActivity extends AppCompatActivity {
         btnActivate = findViewById(R.id.btnActivate);
 
         btnActivate.setOnClickListener(v -> handleActivation());
+
+        findViewById(R.id.tvBackToLogin).setOnClickListener(v -> finish());
     }
 
     private void handleActivation() {
