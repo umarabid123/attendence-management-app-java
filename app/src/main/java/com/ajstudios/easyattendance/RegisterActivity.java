@@ -61,7 +61,7 @@ public class RegisterActivity extends AppCompatActivity {
                     Toast.makeText(this, "Account already registered or invalid.", Toast.LENGTH_SHORT).show();
                 }
             } else {
-                Toast.makeText(this, "Email not found in authorized list. Contact Admin.", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Invite not found. Ask Admin to 'Add Teacher' first.", Toast.LENGTH_LONG).show();
             }
         });
     }
@@ -70,22 +70,36 @@ public class RegisterActivity extends AppCompatActivity {
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        String uid = mAuth.getCurrentUser().getUid();
-                        // Migrate Data
-                        user.setId(uid);
-                        user.setRegistered(true);
-                        
-                        db.collection("users").document(uid).set(user).addOnSuccessListener(v -> {
-                            // Delete old doc
-                            db.collection("users").document(email).delete();
-                            
-                            Toast.makeText(RegisterActivity.this, "Account Activated!", Toast.LENGTH_SHORT).show();
-                            startActivity(new Intent(RegisterActivity.this, MainActivity.class));
-                            finish();
-                        });
+                        finalizeRegistration(mAuth.getCurrentUser().getUid(), user, email);
                     } else {
-                        Toast.makeText(RegisterActivity.this, "Registration Failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        // Handle User Collision (Already in Auth but seemingly not in Firestore or trying to re-activate)
+                        if (task.getException() instanceof com.google.firebase.auth.FirebaseAuthUserCollisionException) {
+                            // Try to sign in instead
+                            mAuth.signInWithEmailAndPassword(email, password)
+                                    .addOnSuccessListener(authResult -> {
+                                        finalizeRegistration(authResult.getUser().getUid(), user, email);
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        Toast.makeText(RegisterActivity.this, "Account exists but password mismatch or error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                                    });
+                        } else {
+                            Toast.makeText(RegisterActivity.this, "Registration Failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        }
                     }
                 });
+    }
+
+    private void finalizeRegistration(String uid, User user, String oldDocId) {
+        user.setId(uid);
+        user.setRegistered(true);
+
+        db.collection("users").document(uid).set(user).addOnSuccessListener(v -> {
+            // Delete old doc (Invite)
+            db.collection("users").document(oldDocId).delete();
+
+            Toast.makeText(RegisterActivity.this, "Account Activated!", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(RegisterActivity.this, MainActivity.class));
+            finish();
+        });
     }
 }

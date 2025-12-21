@@ -61,7 +61,7 @@ public class SuperAdminActivity extends AppCompatActivity {
 
     private void fetchTeachers() {
         db.collection("users")
-                .whereEqualTo("role", "TEACHER")
+                //.whereEqualTo("role", "TEACHER") // Show all users including Admins
                 .addSnapshotListener((snapshots, e) -> {
                     if (e != null) {
                         return;
@@ -87,6 +87,9 @@ public class SuperAdminActivity extends AppCompatActivity {
         EditText etName = dialogView.findViewById(R.id.etTeacherName);
         EditText etEmail = dialogView.findViewById(R.id.etTeacherEmail);
         EditText etPhone = dialogView.findViewById(R.id.etTeacherPhone);
+        
+        android.widget.RadioGroup rgRole = dialogView.findViewById(R.id.rgRole);
+        android.widget.RadioButton rbAdmin = dialogView.findViewById(R.id.rbRoleAdmin);
 
         builder.setPositiveButton("Add", (dialog, id) -> {
             String name = etName.getText().toString().trim();
@@ -94,7 +97,11 @@ public class SuperAdminActivity extends AppCompatActivity {
             String phone = etPhone.getText().toString().trim();
 
             if (!name.isEmpty() && !email.isEmpty()) {
-                addTeacherToDB(name, email, phone);
+                String role = "TEACHER";
+                if (rbAdmin.isChecked()) {
+                    role = "ADMIN";
+                }
+                addTeacherToDB(name, email, phone, role);
             } else {
                 Toast.makeText(this, "Name and Email are required", Toast.LENGTH_SHORT).show();
             }
@@ -103,18 +110,18 @@ public class SuperAdminActivity extends AppCompatActivity {
         builder.create().show();
     }
 
-    private void addTeacherToDB(String name, String email, String phone) {
+    private void addTeacherToDB(String name, String email, String phone, String role) {
         // Create a User object. We use email as the ID initially or auto-gen ID.
         // Using Auth UID is best, but user doesn't exist yet.
         // We will store it with Auto-ID, but include 'email' field for lookup.
         // When user Registers, we update this doc with the real Auth UID or merge.
         // BETTER STRATEGY: Use Email as Document ID.
         
-        User newUser = new User(name, email, phone, "TEACHER", false);
+        User newUser = new User(name, email, phone, role, false);
 
         db.collection("users").document(email).set(newUser) // Use email as doc ID for easy lookup
-                .addOnSuccessListener(aVoid -> Toast.makeText(this, "Teacher Added. They can now register.", Toast.LENGTH_SHORT).show())
-                .addOnFailureListener(e -> Toast.makeText(this, "Error adding teacher", Toast.LENGTH_SHORT).show());
+                .addOnSuccessListener(aVoid -> Toast.makeText(this, "User Added. They can now register as " + role, Toast.LENGTH_SHORT).show())
+                .addOnFailureListener(e -> Toast.makeText(this, "Error adding user", Toast.LENGTH_SHORT).show());
     }
     
     @Override

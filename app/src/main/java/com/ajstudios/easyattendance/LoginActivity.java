@@ -155,15 +155,41 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
+    // TODO: Replace with the specific Gmail you want to have Super Admin access
+    private static final String SUPER_ADMIN_EMAIL = "umarabid709@gmail.com";
+
     private void loginTeacher(String email, String password) {
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        checkUserRole(mAuth.getCurrentUser().getUid());
+                        FirebaseUser user = mAuth.getCurrentUser();
+                        if (user != null && SUPER_ADMIN_EMAIL.equalsIgnoreCase(user.getEmail())) {
+                            // Special Handling for Super Admin: Auto-provision if missing
+                            db.collection("users").document(user.getUid()).get()
+                                    .addOnCompleteListener(docTask -> {
+                                        if (docTask.isSuccessful() && !docTask.getResult().exists()) {
+                                            // Create missing Super Admin profile
+                                            com.ajstudios.easyattendance.model.User adminParams = 
+                                                    new com.ajstudios.easyattendance.model.User("Super Admin", email, "", "SUPER_ADMIN", true);
+                                            adminParams.setId(user.getUid());
+
+                                            db.collection("users").document(user.getUid()).set(adminParams)
+                                                    .addOnSuccessListener(v -> checkUserRole(user.getUid()));
+                                        } else {
+                                            // Update role to ensure access and proceed
+                                            db.collection("users").document(user.getUid())
+                                                    .update("role", "SUPER_ADMIN")
+                                                    .addOnCompleteListener(updateTask -> checkUserRole(user.getUid()));
+                                        }
+                                    });
+                        } else {
+                            // Regular flow
+                            checkUserRole(user.getUid());
+                        }
                     } else {
                         progressBar.setVisibility(View.GONE);
                         btnLogin.setEnabled(true);
-                        Toast.makeText(LoginActivity.this, "Authentication Failed.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(LoginActivity.this, "Authentication Failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
     }
@@ -176,7 +202,8 @@ public class LoginActivity extends AppCompatActivity {
                 DocumentSnapshot document = task.getResult();
                 if (document.exists()) {
                     String role = document.getString("role");
-                    if ("SUPER_ADMIN".equals(role)) {
+                    // Route Admin and Super Admin to the Admin Dashboard
+                    if ("SUPER_ADMIN".equals(role) || "ADMIN".equals(role)) {
                         startActivity(new Intent(this, SuperAdminActivity.class));
                     } else {
                         startActivity(new Intent(this, MainActivity.class));

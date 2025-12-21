@@ -19,4 +19,11 @@
 
     <color name="White">#FFFFFF</color>
     <color name="light_green_A700">#64DD17</color>
+
+    <!-- New Design Colors -->
+    <color name="gradient_start">#667EEA</color>
+    <color name="gradient_end">#764BA2</color>
+    <color name="input_bg">#F5F6FA</color>
+    <color name="text_hint">#A0A4A8</color>
+    <color name="text_primary">#2D3436</color>
 </resources>
