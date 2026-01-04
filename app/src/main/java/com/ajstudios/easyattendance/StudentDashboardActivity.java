@@ -99,75 +99,107 @@ public class StudentDashboardActivity extends AppCompatActivity {
                String regNo = doc.getString("regNo");
                String classId = doc.getString("classId");
                
-               tvWelcome.setText("Welcome, " + name);
+               tvWelcome.setText("Welcome, " + (name != null ? name : "Student"));
+
+               if (classId == null || classId.isEmpty()) {
+                   Toast.makeText(this, "No Class Assigned to this Student Account.", Toast.LENGTH_LONG).show();
+                   tvClassInfo.setText("Not Enrolled");
+                   return; // Prevent Crash
+               }
+
                // Fetch Class Name
                db.collection("classes").document(classId).get().addOnSuccessListener(classDoc -> {
                    if (classDoc.exists()) {
-                       String className = classDoc.getString("className");
-                       String subjectName = classDoc.getString("subjectName");
+                       // Fix: Use correct field keys matching ClassItem.java
+                       String className = classDoc.getString("name_class"); 
+                       String subjectName = classDoc.getString("name_subject");
+                       
+                       if (className == null) className = "Class";
+                       if (subjectName == null) subjectName = "Subject";
+                       
                        tvClassInfo.setText(className + " | " + subjectName);
                    }
                });
                
-               calculateAttendance(classId, regNo);
+               if (regNo != null) {
+                   calculateAttendance(classId, regNo);
+               } else {
+                    Toast.makeText(this, "Registration Number missing in profile.", Toast.LENGTH_SHORT).show();
+               }
            }
-        });
+        }).addOnFailureListener(e -> Toast.makeText(this, "Error fetching profile: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
     private void calculateAttendance(String classId, String regNo) {
         db.collection("classes").document(classId).collection("attendance_reports")
                 .get()
                 .addOnCompleteListener(task -> {
-                    if (task.isSuccessful() && task.getResult() != null) {
-                        Map<String, int[]> subjectMap = new HashMap<>(); // Name -> [Present, Total]
-                        int totalAll = 0;
-                        int presentAll = 0;
+                    try {
+                        if (task.isSuccessful() && task.getResult() != null) {
+                            Map<String, int[]> subjectMap = new HashMap<>(); // Name -> [Present, Total]
+                            int totalAll = 0;
+                            int presentAll = 0;
 
-                        for (QueryDocumentSnapshot doc : task.getResult()) {
-                            AttendanceReport report = doc.toObject(AttendanceReport.class);
-                            String subj = report.getSubjectName();
-                            if (subj == null) subj = "General";
+                            if (task.getResult().isEmpty()) {
+                                 Toast.makeText(this, "No attendance records found for your class.", Toast.LENGTH_SHORT).show();
+                            }
 
-                            // Find student status
-                            boolean found = false;
-                            boolean present = false;
-                            
-                            if (report.getAttendanceList() != null) {
-                                for (AttendanceItem item : report.getAttendanceList()) {
-                                    String itemReg = item.getRegNo();
-                                    if (itemReg != null && itemReg.trim().equalsIgnoreCase(regNo.trim())) {
-                                        found = true;
-                                        present = "Present".equalsIgnoreCase(item.getStatus());
-                                        break;
+                            for (QueryDocumentSnapshot doc : task.getResult()) {
+                                try {
+                                    AttendanceReport report = doc.toObject(AttendanceReport.class);
+                                    String subj = report.getSubjectName();
+                                    if (subj == null || subj.isEmpty()) subj = "General";
+
+                                    boolean found = false;
+                                    boolean present = false;
+                                    
+                                    if (report.getAttendanceList() != null) {
+                                        for (AttendanceItem item : report.getAttendanceList()) {
+                                            String itemReg = item.getRegNo();
+                                            // Robust comparison
+                                            if (itemReg != null && itemReg.trim().equalsIgnoreCase(regNo.trim())) {
+                                                found = true;
+                                                present = "Present".equalsIgnoreCase(item.getStatus());
+                                                break;
+                                            }
+                                        }
                                     }
+
+                                    if (found) {
+                                        if (!subjectMap.containsKey(subj)) {
+                                            subjectMap.put(subj, new int[]{0, 0});
+                                        }
+                                        subjectMap.get(subj)[1]++; 
+                                        totalAll++;
+                                        if (present) {
+                                            subjectMap.get(subj)[0]++; 
+                                            presentAll++;
+                                        }
+                                    }
+                                } catch (Exception innerE) {
+                                    // Ignore malformed report documents to prevent crash
+                                    innerE.printStackTrace();
                                 }
                             }
 
-                            if (found) {
-                                if (!subjectMap.containsKey(subj)) {
-                                    subjectMap.put(subj, new int[]{0, 0});
-                                }
-                                subjectMap.get(subj)[1]++; // Increment Total
-                                totalAll++;
-                                if (present) {
-                                    subjectMap.get(subj)[0]++; // Increment Present
-                                    presentAll++;
-                                }
+                            // Update UI
+                            statsList.clear();
+                            for (Map.Entry<String, int[]> entry : subjectMap.entrySet()) {
+                                int p = entry.getValue()[0];
+                                int t = entry.getValue()[1];
+                                statsList.add(new SubjectStat(entry.getKey(), p, t));
                             }
-                        }
+                            adapter.notifyDataSetChanged();
 
-                        // Update UI
-                        statsList.clear();
-                        for (Map.Entry<String, int[]> entry : subjectMap.entrySet()) {
-                            statsList.add(new SubjectStat(entry.getKey(), entry.getValue()[0], entry.getValue()[1]));
+                            int overallPerc = (totalAll == 0) ? 0 : (int)((presentAll / (float)totalAll) * 100);
+                            tvPercentage.setText(overallPerc + "%");
+                            itemsProgressBar.setProgress(overallPerc);
+                        } else {
+                            Toast.makeText(this, "Failed to load attendance", Toast.LENGTH_SHORT).show();
                         }
-                        adapter.notifyDataSetChanged();
-
-                        int overallPerc = (totalAll == 0) ? 0 : (int)((presentAll / (float)totalAll) * 100);
-                        tvPercentage.setText(overallPerc + "%");
-                        itemsProgressBar.setProgress(overallPerc);
-                    } else {
-                        Toast.makeText(this, "Failed to load attendance", Toast.LENGTH_SHORT).show();
+                    } catch (Exception e) {
+                        Toast.makeText(this, "Error calculating attendance: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        e.printStackTrace();
                     }
                 });
     }
