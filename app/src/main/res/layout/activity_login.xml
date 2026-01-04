@@ -24,6 +24,13 @@
             android:orientation="vertical"
             android:padding="32dp">
 
+            <ImageView
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:layout_gravity="center"
+                android:src="@drawable/gmgc_logo_final"
+                android:layout_marginBottom="16dp"/>
+
             <TextView
                 android:id="@+id/title"
                 android:layout_width="wrap_content"

@@ -10,7 +10,7 @@
     <ImageView
         android:layout_width="200dp"
         android:layout_height="200dp"
-        android:src="@drawable/gmgc_logo"
+        android:src="@drawable/gmgc_logo_final"
         android:contentDescription="App Logo"
         android:scaleType="fitCenter" />
 

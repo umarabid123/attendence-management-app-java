@@ -5,9 +5,9 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@drawable/gmgc_logo"
+        android:icon="@drawable/gmgc_logo_final"
         android:label="Easy Attendance"
-        android:roundIcon="@drawable/gmgc_logo"
+        android:roundIcon="@drawable/gmgc_logo_final"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
