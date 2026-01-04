@@ -102,104 +102,112 @@ public class StudentDashboardActivity extends AppCompatActivity {
                tvWelcome.setText("Welcome, " + (name != null ? name : "Student"));
 
                if (classId == null || classId.isEmpty()) {
-                   Toast.makeText(this, "No Class Assigned to this Student Account.", Toast.LENGTH_LONG).show();
                    tvClassInfo.setText("Not Enrolled");
-                   return; // Prevent Crash
+                   return;
                }
 
-               // Fetch Class Name
+               // Update Class Info
                db.collection("classes").document(classId).get().addOnSuccessListener(classDoc -> {
                    if (classDoc.exists()) {
-                       // Fix: Use correct field keys matching ClassItem.java
                        String className = classDoc.getString("name_class"); 
                        String subjectName = classDoc.getString("name_subject");
-                       
                        if (className == null) className = "Class";
                        if (subjectName == null) subjectName = "Subject";
-                       
                        tvClassInfo.setText(className + " | " + subjectName);
                    }
                });
                
-               if (regNo != null) {
+               // Use stored RegNo if available or from doc
+               if (regNo == null || regNo.isEmpty()) {
+                   regNo = sharedPreferences.getString("REG_NO", "");
+               }
+
+               if (regNo != null && !regNo.isEmpty()) {
                    calculateAttendance(classId, regNo);
                } else {
-                    Toast.makeText(this, "Registration Number missing in profile.", Toast.LENGTH_SHORT).show();
+                   Toast.makeText(this, "Registration Number missing.", Toast.LENGTH_SHORT).show();
                }
            }
-        }).addOnFailureListener(e -> Toast.makeText(this, "Error fetching profile: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+        }).addOnFailureListener(e -> Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
     private void calculateAttendance(String classId, String regNo) {
+        if (classId == null) return;
+        
         db.collection("classes").document(classId).collection("attendance_reports")
                 .get()
                 .addOnCompleteListener(task -> {
-                    try {
-                        if (task.isSuccessful() && task.getResult() != null) {
-                            Map<String, int[]> subjectMap = new HashMap<>(); // Name -> [Present, Total]
-                            int totalAll = 0;
-                            int presentAll = 0;
+                    if (task.isSuccessful() && task.getResult() != null) {
 
-                            if (task.getResult().isEmpty()) {
-                                 Toast.makeText(this, "No attendance records found for your class.", Toast.LENGTH_SHORT).show();
-                            }
 
-                            for (QueryDocumentSnapshot doc : task.getResult()) {
-                                try {
-                                    AttendanceReport report = doc.toObject(AttendanceReport.class);
-                                    String subj = report.getSubjectName();
-                                    if (subj == null || subj.isEmpty()) subj = "General";
+                        try {
+                            if (task.isSuccessful() && task.getResult() != null) {
+                                // Clear lists first if reloading
+                                
+                                // Re-initialize maps here
+                                Map<String, int[]> subjectMap = new HashMap<>(); 
+                                int totalAll = 0;
+                                int presentAll = 0;
+                                
+                                for (QueryDocumentSnapshot doc : task.getResult()) {
+                                    try {
+                                        AttendanceReport report = doc.toObject(AttendanceReport.class);
+                                        String subj = report.getSubjectName();
+                                        if (subj == null || subj.isEmpty()) subj = "General";
 
-                                    boolean found = false;
-                                    boolean present = false;
-                                    
-                                    if (report.getAttendanceList() != null) {
-                                        for (AttendanceItem item : report.getAttendanceList()) {
-                                            String itemReg = item.getRegNo();
-                                            // Robust comparison
-                                            if (itemReg != null && itemReg.trim().equalsIgnoreCase(regNo.trim())) {
-                                                found = true;
-                                                present = "Present".equalsIgnoreCase(item.getStatus());
-                                                break;
+                                        if (report.getAttendanceList() != null) {
+                                            for (AttendanceItem item : report.getAttendanceList()) {
+                                                String r = item.getRegNo();
+                                                if (r != null && regNo != null && r.trim().equalsIgnoreCase(regNo.trim())) {
+                                                    
+                                                    if (!subjectMap.containsKey(subj)) {
+                                                        subjectMap.put(subj, new int[]{0, 0});
+                                                    }
+                                                    
+                                                    // Increment Total
+                                                    subjectMap.get(subj)[1]++;
+                                                    totalAll++;
+                                                    
+                                                    // Check Present
+                                                    String status = item.getStatus();
+                                                    if (status != null && (status.equalsIgnoreCase("Present") || status.toUpperCase().startsWith("P"))) {
+                                                        subjectMap.get(subj)[0]++;
+                                                        presentAll++;
+                                                    }
+                                                    break; // Found student in this report
+                                                }
                                             }
                                         }
+                                    } catch (Exception e) {
+                                        e.printStackTrace(); 
                                     }
-
-                                    if (found) {
-                                        if (!subjectMap.containsKey(subj)) {
-                                            subjectMap.put(subj, new int[]{0, 0});
-                                        }
-                                        subjectMap.get(subj)[1]++; 
-                                        totalAll++;
-                                        if (present) {
-                                            subjectMap.get(subj)[0]++; 
-                                            presentAll++;
-                                        }
-                                    }
-                                } catch (Exception innerE) {
-                                    // Ignore malformed report documents to prevent crash
-                                    innerE.printStackTrace();
                                 }
-                            }
 
-                            // Update UI
-                            statsList.clear();
-                            for (Map.Entry<String, int[]> entry : subjectMap.entrySet()) {
-                                int p = entry.getValue()[0];
-                                int t = entry.getValue()[1];
-                                statsList.add(new SubjectStat(entry.getKey(), p, t));
-                            }
-                            adapter.notifyDataSetChanged();
+                                // Update Stats List
+                                statsList.clear();
+                                for (Map.Entry<String, int[]> entry : subjectMap.entrySet()) {
+                                    int p = entry.getValue()[0];
+                                    int t = entry.getValue()[1];
+                                    statsList.add(new SubjectStat(entry.getKey(), p, t));
+                                }
+                                adapter.notifyDataSetChanged();
 
-                            int overallPerc = (totalAll == 0) ? 0 : (int)((presentAll / (float)totalAll) * 100);
-                            tvPercentage.setText(overallPerc + "%");
-                            itemsProgressBar.setProgress(overallPerc);
-                        } else {
-                            Toast.makeText(this, "Failed to load attendance", Toast.LENGTH_SHORT).show();
+                                // Overall
+                                int overallPerc = (totalAll == 0) ? 0 : (int)((presentAll / (float)totalAll) * 100);
+                                tvPercentage.setText(overallPerc + "%");
+                                itemsProgressBar.setProgress(overallPerc);
+                            } else {
+                                Toast.makeText(this, "Failed to load attendance records.", Toast.LENGTH_SHORT).show();
+                            }
+                        } catch (Exception fatalE) {
+                            fatalE.printStackTrace();
+                            Toast.makeText(this, "Error processing data: " + fatalE.getMessage(), Toast.LENGTH_SHORT).show();
                         }
-                    } catch (Exception e) {
-                        Toast.makeText(this, "Error calculating attendance: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                        e.printStackTrace();
+
+
+                        
+                    } else {
+                        Toast.makeText(this, "Failed to load attendance records.", Toast.LENGTH_SHORT).show();
                     }
                 });
     }

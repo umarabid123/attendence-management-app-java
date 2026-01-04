@@ -17,6 +17,7 @@ public class StudentAdapter extends RecyclerView.Adapter<StudentViewHolder> {
     private List<Student> studentList;
     private Context context;
     private Map<String, String> attendanceMap = new HashMap<>(); // regNo -> "Present"/"Absent"
+    private Map<String, String> statsMap = new HashMap<>(); // regNo -> "85%"
 
     public StudentAdapter(Context context, List<Student> studentList) {
         this.context = context;
@@ -25,6 +26,11 @@ public class StudentAdapter extends RecyclerView.Adapter<StudentViewHolder> {
 
     public void updateList(List<Student> newList) {
         this.studentList = newList;
+        notifyDataSetChanged();
+    }
+    
+    public void setStatsMap(Map<String, String> statsMap) {
+        this.statsMap = statsMap;
         notifyDataSetChanged();
     }
     
@@ -43,7 +49,14 @@ public class StudentAdapter extends RecyclerView.Adapter<StudentViewHolder> {
     public void onBindViewHolder(@NonNull StudentViewHolder holder, int position) {
         Student student = studentList.get(position);
         holder.student_name.setText(student.getName());
-        holder.student_regNo.setText(student.getRegNo());
+        
+        String reg = student.getRegNo();
+        String perc = statsMap.get(reg);
+        if (perc != null) {
+            holder.student_regNo.setText(reg + " | " + perc);
+        } else {
+            holder.student_regNo.setText(reg);
+        }
         
         // Reset listeners to avoid recycling issues
         holder.radioButton_present.setOnCheckedChangeListener(null);

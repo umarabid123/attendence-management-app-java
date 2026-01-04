@@ -38,6 +38,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.appbar.CollapsingToolbarLayout;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.text.SimpleDateFormat;
@@ -239,6 +240,42 @@ public class ClassDetail_Activity extends AppCompatActivity {
                 });
     }
 
+    private String todayReportId = null;
+
+    private void loadAttendanceStats() {
+        db.collection("classes").document(room_ID).collection("attendance_reports")
+            .get()
+            .addOnSuccessListener(snapshots -> {
+                Map<String, int[]> studentStats = new HashMap<>(); // RegNo -> [Present, Total]
+                Map<String, String> statsDisplay = new HashMap<>();
+
+                for (QueryDocumentSnapshot doc : snapshots) {
+                    AttendanceReport report = doc.toObject(AttendanceReport.class);
+                    if (report.getAttendanceList() != null) {
+                        for (AttendanceItem item : report.getAttendanceList()) {
+                            String r = item.getRegNo();
+                            if (r != null) {
+                                if (!studentStats.containsKey(r)) studentStats.put(r, new int[]{0,0});
+                                studentStats.get(r)[1]++; // Total
+                                if ("Present".equalsIgnoreCase(item.getStatus())) {
+                                    studentStats.get(r)[0]++; // Present
+                                }
+                            }
+                        }
+                    }
+                }
+
+                for (Map.Entry<String, int[]> entry : studentStats.entrySet()) {
+                    int p = entry.getValue()[0];
+                    int t = entry.getValue()[1];
+                    int perc = (t == 0) ? 0 : (int) ((p / (float) t) * 100);
+                    statsDisplay.put(entry.getKey(), perc + "%");
+                }
+                mAdapter.setStatsMap(statsDisplay);
+            })
+            .addOnFailureListener(e -> Toast.makeText(this, "Failed to load stats", Toast.LENGTH_SHORT).show());
+    }
+
     private void checkAttendanceToday() {
         String date = new SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault()).format(new Date());
         db.collection("classes").document(room_ID).collection("attendance_reports")
@@ -246,26 +283,42 @@ public class ClassDetail_Activity extends AppCompatActivity {
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     if (!queryDocumentSnapshots.isEmpty()) {
-                        layout_attendance_taken.setVisibility(View.VISIBLE);
-                        submit_btn.setVisibility(View.GONE);
+                        // Attendance exists, load it for editing
+                        DocumentSnapshot doc = queryDocumentSnapshots.getDocuments().get(0);
+                        todayReportId = doc.getId();
+                        AttendanceReport report = doc.toObject(AttendanceReport.class);
+                        
+                        if (report != null && report.getAttendanceList() != null) {
+                            for (AttendanceItem item : report.getAttendanceList()) {
+                                mAdapter.getAttendanceMap().put(item.getRegNo(), item.getStatus());
+                            }
+                            mAdapter.notifyDataSetChanged();
+                        }
+                        
+                        layout_attendance_taken.setVisibility(View.GONE); // Hide "Taken" label, show list
+                        submit_btn.setText("Update Attendance");
+                        submit_btn.setVisibility(View.VISIBLE);
                     } else {
+                        todayReportId = null;
                         layout_attendance_taken.setVisibility(View.GONE);
                          // Only show submit button if there are students
                         if (!studentList.isEmpty()) {
+                            submit_btn.setText("Submit Usage");
                             submit_btn.setVisibility(View.VISIBLE);
                         }
                     }
+                    // Load global stats regardless
+                    loadAttendanceStats();
                 })
                 .addOnFailureListener(e -> {
-                     // On failure, maybe just show button if students exist to be safe
                      if (!studentList.isEmpty()) submit_btn.setVisibility(View.VISIBLE);
+                     loadAttendanceStats();
                 });
     }
 
     public void addStudentMethod(final String studentName, final String regNo, final String mobileNo) {
         Toast.makeText(ClassDetail_Activity.this, "Adding Student...", Toast.LENGTH_SHORT).show();
 
-        // 1. Add to Class Subcollection
         final Student student = new Student(studentName.trim(), regNo.trim(), mobileNo.trim(), room_ID);
 
         db.collection("classes").document(room_ID).collection("students")
@@ -274,12 +327,6 @@ public class ClassDetail_Activity extends AppCompatActivity {
                     @Override
                     public void onSuccess(DocumentReference documentReference) {
                         String studentDocId = documentReference.getId();
-                        
-                        // 2. Add to Global 'students' collection for Login
-                        // We include classId (room_ID) so we know which class they belong to.
-                        // We also need to set the ID to match valid referencing if needed, 
-                        // but Login query uses 'whereEqualTo' so ID doesn't matter as much, 
-                        // but let's keep consistency.
                         
                         Map<String, Object> globalStudent = new HashMap<>();
                         globalStudent.put("name", studentName.trim());
@@ -304,14 +351,13 @@ public class ClassDetail_Activity extends AppCompatActivity {
         Map<String, String> attendanceMap = mAdapter.getAttendanceMap();
         
         // Simple validation: check if all students have a status
-        // Note: Map might contain unchecked students as null or just missing
         if (attendanceMap.size() < studentList.size()) {
              Toast.makeText(ClassDetail_Activity.this, "Please mark attendance for all students", Toast.LENGTH_SHORT).show();
              return;
         }
 
         final ProgressDialog progressDialog = new ProgressDialog(ClassDetail_Activity.this);
-        progressDialog.setMessage("Submitting Attendance..");
+        progressDialog.setMessage(todayReportId != null ? "Updating Attendance..." : "Submitting Attendance..");
         progressDialog.show();
 
         String date = new SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault()).format(new Date());
@@ -319,29 +365,42 @@ public class ClassDetail_Activity extends AppCompatActivity {
         List<AttendanceItem> items = new ArrayList<>();
         for (Student s : studentList) {
             String status = attendanceMap.get(s.getRegNo());
-            if (status == null) status = "Absent"; // Default or error? Adapter check above should catch this but safety first
+            if (status == null) status = "Absent"; 
             items.add(new AttendanceItem(s.getName(), s.getRegNo(), status));
         }
 
         AttendanceReport report = new AttendanceReport(date, room_ID, class_Name, subject_Name, items);
 
-        db.collection("classes").document(room_ID).collection("attendance_reports")
-                .add(report)
-                .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
-                    @Override
-                    public void onSuccess(DocumentReference documentReference) {
-                        progressDialog.dismiss();
-                        Toast.makeText(ClassDetail_Activity.this, "Attendance Submitted", Toast.LENGTH_SHORT).show();
-                        checkAttendanceToday(); // Update UI
-                    }
+        if (todayReportId != null) {
+            // Update existing
+            db.collection("classes").document(room_ID).collection("attendance_reports")
+                .document(todayReportId)
+                .set(report)
+                .addOnSuccessListener(aVoid -> {
+                    progressDialog.dismiss();
+                    Toast.makeText(ClassDetail_Activity.this, "Attendance Updated", Toast.LENGTH_SHORT).show();
+                    loadAttendanceStats(); // Refresh stats
                 })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        progressDialog.dismiss();
-                        Toast.makeText(ClassDetail_Activity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    }
+                .addOnFailureListener(e -> {
+                    progressDialog.dismiss();
+                    Toast.makeText(ClassDetail_Activity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
+        } else {
+            // Create new
+            db.collection("classes").document(room_ID).collection("attendance_reports")
+                .add(report)
+                .addOnSuccessListener(documentReference -> {
+                    todayReportId = documentReference.getId(); // allow subsequent updates
+                    progressDialog.dismiss();
+                    Toast.makeText(ClassDetail_Activity.this, "Attendance Submitted", Toast.LENGTH_SHORT).show();
+                    submit_btn.setText("Update Attendance");
+                    loadAttendanceStats(); // Refresh stats
+                })
+                .addOnFailureListener(e -> {
+                    progressDialog.dismiss();
+                    Toast.makeText(ClassDetail_Activity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+        }
     }
 
     public boolean isValid() {
