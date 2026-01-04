@@ -86,16 +86,20 @@ public class LoginActivity extends AppCompatActivity {
     private void setupToggle() {
         roleToggle.setOnCheckedChangeListener((group, checkedId) -> {
             if (checkedId == R.id.rbStudent) {
-                tilInput1.setHint("Roll Number");
+                tilInput1.setHint("Roll No");
+                etInput1.setHint("Roll No");
                 etInput1.setInputType(InputType.TYPE_CLASS_TEXT);
-                tilInput2.setHint("Mobile Number");
+                tilInput2.setHint("Phone");
+                etInput2.setHint("Phone");
                 etInput2.setInputType(InputType.TYPE_CLASS_PHONE);
                 tvForgotPassword.setVisibility(View.GONE);
                 tvRegister.setVisibility(View.GONE);
             } else {
                 tilInput1.setHint("Email");
+                etInput1.setHint("Email");
                 etInput1.setInputType(InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
                 tilInput2.setHint("Password");
+                etInput2.setHint("Password");
                 etInput2.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
                 tvForgotPassword.setVisibility(View.VISIBLE);
                 tvRegister.setVisibility(View.VISIBLE);
