@@ -92,6 +92,7 @@ public class LoginActivity extends AppCompatActivity {
                 tilInput2.setHint("Phone");
                 etInput2.setHint("Phone");
                 etInput2.setInputType(InputType.TYPE_CLASS_PHONE);
+                tilInput2.setEndIconMode(TextInputLayout.END_ICON_NONE);
                 tvForgotPassword.setVisibility(View.GONE);
                 tvRegister.setVisibility(View.GONE);
             } else {
@@ -100,6 +101,7 @@ public class LoginActivity extends AppCompatActivity {
                 etInput1.setInputType(InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
                 tilInput2.setHint("Password");
                 etInput2.setHint("Password");
+                tilInput2.setEndIconMode(TextInputLayout.END_ICON_PASSWORD_TOGGLE);
                 etInput2.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
                 tvForgotPassword.setVisibility(View.VISIBLE);
                 tvRegister.setVisibility(View.VISIBLE);
@@ -122,6 +124,13 @@ public class LoginActivity extends AppCompatActivity {
         if (rbStudent.isChecked()) {
             loginStudent(input1, input2);
         } else {
+            if (input2.length() <= 8) {
+                tilInput2.setError("Password must be greater than 8 characters");
+                progressBar.setVisibility(View.GONE);
+                btnLogin.setEnabled(true);
+                return;
+            }
+            tilInput2.setError(null);
             loginTeacher(input1, input2);
         }
     }
