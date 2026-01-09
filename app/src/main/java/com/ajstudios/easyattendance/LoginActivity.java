@@ -124,8 +124,8 @@ public class LoginActivity extends AppCompatActivity {
         if (rbStudent.isChecked()) {
             loginStudent(input1, input2);
         } else {
-            if (input2.length() <= 8) {
-                tilInput2.setError("Password must be greater than 8 characters");
+            if (input2.length() < 8) {
+                tilInput2.setError("Password must be at least 8 characters");
                 progressBar.setVisibility(View.GONE);
                 btnLogin.setEnabled(true);
                 return;

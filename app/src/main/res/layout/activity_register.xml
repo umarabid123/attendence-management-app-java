@@ -54,27 +54,45 @@
                 android:textColor="@color/text_primary"
                 android:layout_marginBottom="16dp" />
 
-            <EditText
-                android:id="@+id/etRegPassword"
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilRegPassword"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:background="@drawable/bg_input"
-                android:hint="Create Password"
-                android:paddingHorizontal="16dp"
-                android:inputType="textPassword"
-                android:textColor="@color/text_primary"
-                android:layout_marginBottom="16dp" />
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:boxBackgroundMode="none"
+                app:hintEnabled="false"
+                app:endIconMode="password_toggle">
 
-            <EditText
-                android:id="@+id/etRegConfirmPass"
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etRegPassword"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:background="@drawable/bg_input"
+                    android:hint="Create Password"
+                    android:paddingHorizontal="16dp"
+                    android:inputType="textPassword"
+                    android:textColor="@color/text_primary" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilRegConfirmPass"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:background="@drawable/bg_input"
-                android:hint="Confirm Password"
-                android:paddingHorizontal="16dp"
-                android:inputType="textPassword"
-                android:textColor="@color/text_primary"
-                android:layout_marginBottom="24dp" />
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                app:boxBackgroundMode="none"
+                app:hintEnabled="false"
+                app:endIconMode="password_toggle">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etRegConfirmPass"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:background="@drawable/bg_input"
+                    android:hint="Confirm Password"
+                    android:paddingHorizontal="16dp"
+                    android:inputType="textPassword"
+                    android:textColor="@color/text_primary" />
+            </com.google.android.material.textfield.TextInputLayout>
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnActivate"
