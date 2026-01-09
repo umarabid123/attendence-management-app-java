@@ -172,29 +172,34 @@ public class ClassDetail_Activity extends AppCompatActivity {
 
                 AlertDialog.Builder builder = new AlertDialog.Builder(ClassDetail_Activity.this);
                 builder.setView(view1);
-                builder.setTitle("Add Student");
                 builder.setCancelable(false);
-                builder.setPositiveButton("Add", new DialogInterface.OnClickListener() {
+                
+                AlertDialog dialog = builder.create();
+                
+                view1.findViewById(R.id.cancel_btn_popup).setOnClickListener(new View.OnClickListener() {
                     @Override
-                    public void onClick(DialogInterface dialog, int which) {
+                    public void onClick(View v) {
+                        dialog.dismiss();
+                    }
+                });
+
+                view1.findViewById(R.id.add_btn_popup).setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
                         String name = student_name.getText().toString();
                         String regNo = reg_no.getText().toString();
                         String mobNo = mobile_no.getText().toString();
 
                         if (isValid()) {
                             addStudentMethod(name, regNo, mobNo);
+                            dialog.dismiss();
                         } else {
                             Toast.makeText(ClassDetail_Activity.this, "Please fill all the details..", Toast.LENGTH_SHORT).show();
                         }
                     }
                 });
-                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                });
-                builder.show();
+
+                dialog.show();
             }
         });
     }

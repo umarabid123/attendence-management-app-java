@@ -10,12 +10,16 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.ajstudios.easyattendance.model.User;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 public class RegisterActivity extends AppCompatActivity {
 
-    private EditText etEmail, etPassword, etConfirmPass;
+    private EditText etEmail;
+    private TextInputEditText etPassword, etConfirmPass;
+    private TextInputLayout tilPassword, tilConfirmPass;
     private Button btnActivate;
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
@@ -29,7 +33,9 @@ public class RegisterActivity extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
 
         etEmail = findViewById(R.id.etRegEmail);
+        tilPassword = findViewById(R.id.tilRegPassword);
         etPassword = findViewById(R.id.etRegPassword);
+        tilConfirmPass = findViewById(R.id.tilRegConfirmPass);
         etConfirmPass = findViewById(R.id.etRegConfirmPass);
         btnActivate = findViewById(R.id.btnActivate);
 
@@ -43,13 +49,22 @@ public class RegisterActivity extends AppCompatActivity {
         String password = etPassword.getText().toString().trim();
         String confirm = etConfirmPass.getText().toString().trim();
 
-        if (email.isEmpty() || password.isEmpty()) {
+        // Reset errors
+        tilPassword.setError(null);
+        tilConfirmPass.setError(null);
+
+        if (email.isEmpty() || password.isEmpty() || confirm.isEmpty()) {
             Toast.makeText(this, "Fill all fields", Toast.LENGTH_SHORT).show();
             return;
         }
 
+        if (password.length() < 8) {
+            tilPassword.setError("Password must be at least 8 characters");
+            return;
+        }
+
         if (!password.equals(confirm)) {
-            Toast.makeText(this, "Passwords do not match", Toast.LENGTH_SHORT).show();
+            tilConfirmPass.setError("Passwords do not match");
             return;
         }
 
